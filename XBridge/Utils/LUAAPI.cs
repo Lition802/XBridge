@@ -12,6 +12,10 @@ namespace XBridge.Utils
     public class LUAAPI
     {
         /// <summary>
+        /// lua虚拟机
+        /// </summary>
+        public static Script lua = new Script();
+        /// <summary>
         /// lua函数
         /// </summary>
         public static Dictionary<string, List<Closure>> func = new Dictionary<string, List<Closure>>()
@@ -19,7 +23,7 @@ namespace XBridge.Utils
             {"msg",new List<Closure>() },
             {"ws",new List<Closure>() }
         };
-        delegate DynValue RUNCMD(object ser, object cmd);
+        delegate DynValue RUNCMD(long g,object ser, object cmd);
         delegate DynValue SEND(DynValue mode, object text);
         delegate void LISTEN(object o,Closure f);
         delegate DynValue GETCONFIG(object o);
@@ -45,16 +49,16 @@ namespace XBridge.Utils
         /// <summary>
         /// 执行命令
         /// </summary>
-        static RUNCMD cs_runcmd = (ser, cmd) =>
+        static RUNCMD cs_runcmd = (g,ser, cmd) =>
         {
             if(ser.ToString() == "all")
             {
-                SendPack.runcmdAll(cmd.ToString());
+                SendPack.runcmdAll(g,cmd.ToString());
                 return DynValue.True;
             }
             if (Data.is_server(ser.ToString()))
             {
-                SendPack.runcmd(ser.ToString(), cmd.ToString());
+                SendPack.runcmd(g,ser.ToString(), cmd.ToString());
                 return DynValue.True;
             }
             return DynValue.False;
@@ -74,11 +78,11 @@ namespace XBridge.Utils
             switch (m.Number)
             {
                 case 0:
-                    foreach (long id in Main.setting.Group.main)
+                    foreach (long id in Setting.setting.Group.main)
                         CurrentPluginContext.Group(id).Send(t.ToString());
                     return DynValue.True;
                 case 1:
-                    foreach (long id in Main.setting.Group.chat)
+                    foreach (long id in Setting.setting.Group.chat)
                         CurrentPluginContext.Group(id).Send(t.ToString());
                     return DynValue.True;
                 default:
@@ -93,12 +97,12 @@ namespace XBridge.Utils
             switch (o.ToString())
             {
                 case "admins":
-                    var at = new Table(Main.lua);
-                    foreach (long q in Main.setting.Admins)
+                    var at = new Table(lua);
+                    foreach (long q in Setting.setting.Admins)
                         at.Append(DynValue.NewNumber(q));
                     return DynValue.NewTable(at);
                 case "servers":
-                    var st = new Table(Main.lua);
+                    var st = new Table(lua);
                     foreach (var i in Main.sockets)
                         st.Append(DynValue.NewString(i.Key));
                     return DynValue.NewTable(st);
@@ -126,12 +130,12 @@ namespace XBridge.Utils
         /// </summary>
         public static void init()
         {
-            Main.lua.Globals["send"] = cs_send;
-            Main.lua.Globals["runcmd"] = cs_runcmd;
-            Main.lua.Globals["getcfg"] = cs_getcfg;
-            Main.lua.Globals["lisen"] = cs_listen;
-            Main.lua.Globals["xbcmd"] = cs_xbcmd;
-            Main.lua.Globals["whitelist"] = cs_whitelist;
+            lua.Globals["send"] = cs_send;
+            lua.Globals["runcmd"] = cs_runcmd;
+            lua.Globals["getcfg"] = cs_getcfg;
+            lua.Globals["lisen"] = cs_listen;
+            lua.Globals["xbcmd"] = cs_xbcmd;
+            lua.Globals["whitelist"] = cs_whitelist;
         }
         /// <summary>
         /// 读取脚本
@@ -143,7 +147,7 @@ namespace XBridge.Utils
                 Directory.CreateDirectory(LUAPATH);
             foreach (var i in new DirectoryInfo(LUAPATH).GetFiles("*.lua"))
             {
-                try { Main.lua.DoFile(i.FullName); }
+                try { lua.DoFile(i.FullName); }
                 catch (Exception ex)
                 {
                     CurrentPluginContext.Logger.LogError(ex.ToString());

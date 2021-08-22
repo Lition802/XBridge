@@ -13,7 +13,7 @@ namespace XBridge.Config
             {"MEMBER_NOT_ADMIN","你不是管理员，无法进行此操作！" },
             {"MEMBER_ALREADY_IN_WHITELIST","你已经绑定过一个白名单了({0})" },
             {"MEMBER_NOT_BIND","你还没有绑定白名单！" },
-            {"MEMBER_NOT_BIND_WHEN_EWMOVE","成员{0}还没有绑定白名单！" },
+            {"MEMBER_NOT_BIND_WHEN_REMOVE","成员{0}还没有绑定白名单！" },
             {"MEMBER_BIND_SUCCESS","你的白名单({0})绑定成功" },
             {"MEMBER_UNBIND","你的白名单已解绑" },
             {"XBOXID_ADD_TO_SERVER_SUCCESS","你的白名单已成功添加到服务器" },
@@ -37,7 +37,7 @@ namespace XBridge.Config
             {"CMD_FEEDBACK","[cmd][{0}] {1}" },
             {"WSPACK_RECEIVE_ERROR","与服务器[{0}]的收信文本解析失败:{1}" },
             {"MESSAGE_AT","@{0}" },
-            {"MESSGAE_AT_ALL","@全体成员" },
+            {"MESSAGE_AT_ALL","@全体成员" },
             {"MESSAGE_IMAGE","[图片]" },
             {"MESSAGE_FACE","[表情]" }
         };

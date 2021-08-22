@@ -23,50 +23,27 @@ namespace XBridge.Utils
         }
         public static bool wl_exsis(long q)
         {
-            return Main.playerdatas.ContainsKey(q);
+            return Main.playerdatas.wl_exsis(q);
         }
         public static bool wl_add(long q,string xboxid)
         {
-            if (!Main.playerdatas.ContainsKey(q))
-            {
-                var pl = new PlayerData() { xboxid = xboxid, count = new Count() };
-                Main.playerdatas.Add(q, pl);
-                SAVE();
-                return true;
-            }
-            return false;
+            return Main.playerdatas.wl_add(q, xboxid);
         }
         public static bool wl_remove(long q)
         {
-            if (Main.playerdatas.ContainsKey(q))
-            {
-                Main.playerdatas.Remove(q);
-                SAVE();
-                return true;
-            }
-            return false;
+            return Main.playerdatas.wl_remove(q);
         }
         public static bool xboxid_exsis(string id)
         {
-            foreach(var i in Main.playerdatas)
-            {
-                if (i.Value.xboxid == id)
-                    return true;
-            }
-            return false;
+            return Main.playerdatas.xboxidExsis(id);
         }
         public static string get_xboxid(long q)
         {
-            foreach (var i in Main.playerdatas)
-            {
-                if (i.Key == q)
-                    return i.Value.xboxid;
-            }
-            return null;
+            return Main.playerdatas.getXboxid(q);
         }
         public static bool is_admin(long q)
         {
-            foreach (var i in Main.setting.Admins)
+            foreach (var i in Setting.setting.Admins)
             {
                 if (i == q)
                     return true;
@@ -74,24 +51,15 @@ namespace XBridge.Utils
             return false;
         }
         public static long id2qq(string id) {
-            foreach (var i in Main.playerdatas)
-            {
-                if (i.Value.xboxid == id)
-                    return i.Key;
-            }
-            return 0;
+            return Main.playerdatas.xboxid2QQ(id);
         }
         public static int CheckJoinTime(string xboxid)
         {
-            if (xboxid_exsis(xboxid))
-            {
-                return Main.playerdatas[id2qq(xboxid)].count.join;
-            }
-            return 0;
+            return Main.playerdatas.CheckJoinTime(xboxid);
         }
         public static void SAVE()
         {
-            File.WriteAllText(CurrentPluginContext.Bot.AppDirectory + "playerdata.json",JsonConvert.SerializeObject(Main.playerdatas));
+            Main.playerdatas.SAVE();
         }
     }
 }

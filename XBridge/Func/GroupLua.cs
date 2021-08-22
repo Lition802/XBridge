@@ -15,12 +15,12 @@ namespace XBridge.Func
         public static void on_message(object sender,GroupMessageReceivedEventArgs e)
         {
             long groupid = e.Source.Number;
-            if (Main.setting.Group.main.Contains(groupid) || Main.setting.Group.chat.Contains(groupid))
+            if (Setting.setting.Group.main.Contains(groupid) || Setting.setting.Group.chat.Contains(groupid))
             {
-                var t = new Table(Main.lua);
-                var gt = new Table(Main.lua);
-                var mt = new Table(Main.lua);
-                var st = new Table(Main.lua);
+                var t = new Table(LUAAPI.lua);
+                var gt = new Table(LUAAPI.lua);
+                var mt = new Table(LUAAPI.lua);
+                var st = new Table(LUAAPI.lua);
                 st.Set("id", DynValue.NewNumber(e.Sender.Number));
                 st.Set("DisplayName", DynValue.NewString(e.Sender.DisplayName));
                 gt.Set("DisplayName", DynValue.NewString(e.Source.DisplayName));

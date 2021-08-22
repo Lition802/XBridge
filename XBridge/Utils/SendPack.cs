@@ -16,12 +16,12 @@ namespace XBridge.Utils
         /// <param name="ser">服务器名称</param>
         /// <param name="cmd">命令</param>
         /// <returns></returns>
-        public static bool runcmd(string ser,string cmd)
+        public static bool runcmd(long group,string ser,string cmd)
         {
             if (Main.sockets.ContainsKey(ser))
             {
                 string tmpid = Guid.NewGuid().ToString();
-                Main.runcmdid[ser] = tmpid;
+                Main.runcmdid[ser].Add(tmpid,group);
                 var pack = new RunCMD()
                 {
                     @params = new @params
@@ -30,6 +30,7 @@ namespace XBridge.Utils
                         id = tmpid
                     }
                 };
+                logs.logToFile($"({tmpid})[RUNCMD] >> [{ser}]");
                 Main.sockets[ser].Send(Encrypt.Encrypted(JsonConvert.SerializeObject(pack), Main.sockets[ser].getK, Main.sockets[ser].getiv));
                 return true;
             }
@@ -39,11 +40,11 @@ namespace XBridge.Utils
         /// 所有服务器执行命令
         /// </summary>
         /// <param name="cmd"></param>
-        public static void runcmdAll(string cmd)
+        public static void runcmdAll(long group,string cmd)
         {
             foreach(var i in Main.sockets)
             {
-                runcmd(i.Key, cmd);
+                runcmd(group,i.Key, cmd);
             }
         }
         public static void sendText(string ser, string text)
@@ -56,6 +57,7 @@ namespace XBridge.Utils
                     id = Guid.NewGuid().ToString()
                 }
             };
+            logs.logToFile($"({pack.@params.id})[SENDTEXT] >> [{ser}]");
             Main.sockets[ser].Send(Encrypt.Encrypted(JsonConvert.SerializeObject(pack), Main.sockets[ser].getK, Main.sockets[ser].getiv));
         }
         public static void bcText(string ser, string text) {

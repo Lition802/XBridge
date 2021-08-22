@@ -19,20 +19,21 @@ namespace XBridge.Func
     {
         public static void on_chat(object sender, GroupMessageReceivedEventArgs e)
         {
-            if (Main.setting.Group.chat.Contains(e.Source.Number))
+            if (Setting.setting.Group.chat.Contains(e.Source.Number))
             {
+                long id = e.Source.Number;
                 var plain = e.Message.Parse().GetPlainText();
-                if(Main.tmp.chatindex == "*")
+                if(Main.tmp[id].chatindex == "*")
                 {
                     if(Message.GetMsg(e) != string.Empty)
                         SendPack.bcText(Lang.get("GROUP_MEMBER_CHAT",name2xboxid(e.Sender.DisplayName,e.Sender.Number), Message.GetMsg(e)));
                 }
                 else
                 {
-                    if(plain.Substring(0,Main.tmp.chatindex.Length) == Main.tmp.chatindex)
+                    if(plain.Substring(0,Main.tmp[id].chatindex.Length) == Main.tmp[id].chatindex)
                     {
-                        if (plain.Length > Main.tmp.chatindex.Length+1)//plain.Substring(Main.tmp.chatindex.Length)
-                            SendPack.bcText(Lang.get("GROUP_MEMBER_CHAT", name2xboxid(e.Sender.DisplayName, e.Sender.Number), plain.Substring(Main.tmp.chatindex.Length)));
+                        if (plain.Length > Main.tmp[id].chatindex.Length+1)//plain.Substring(Main.tmp.chatindex.Length)
+                            SendPack.bcText(Lang.get("GROUP_MEMBER_CHAT", name2xboxid(e.Sender.DisplayName, e.Sender.Number), plain.Substring(Main.tmp[id].chatindex.Length)));
                     }
                 }
             }

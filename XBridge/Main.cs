@@ -6,6 +6,8 @@ using XBridge.Func;
 using MoonSharp.Interpreter;
 using System.Threading;
 using XBridge.Utils;
+using XBridge.Websocket;
+using CQ = HuajiTech.CoolQ.CurrentPluginContext;
 
 namespace XBridge
 {
@@ -15,39 +17,19 @@ namespace XBridge
     internal class Main : Plugin
     {
         #region 配置文件和临时文件
-        public static TMP tmp = new TMP();
-        /// <summary>
-        /// 正则表达式组
-        /// </summary>
-        public static List<RegexItem> regexs = new List<RegexItem>();
+        public static Dictionary<long, TMP> tmp =TMP.init();
         /// <summary>
         /// 玩家数据
         /// </summary>
-        public static Dictionary<long, PlayerData> playerdatas = new Dictionary<long, PlayerData>();
-        /// <summary>
-        /// 基本设置
-        /// </summary>
-        public static Setting setting = new Setting();
+        public static XDB playerdatas = new XDB(CQ.Bot.AppDirectory.FullName + "/playerData.xdb", "20040614");
         /// <summary>
         /// 执行命令临时id
         /// </summary>
-        public static Dictionary<string, string> runcmdid = new Dictionary<string, string>();
+        public static Dictionary<string, Dictionary<string,long>> runcmdid = new Dictionary<string, Dictionary<string, long>>();
         /// <summary>
         /// 连接池
         /// </summary>
         public static Dictionary<string, Websocket.Websocket> sockets = new Dictionary<string, Websocket.Websocket>();
-        /// <summary>
-        /// 生物文件
-        /// </summary>
-        public static Dictionary<string, string> mobs = new Dictionary<string, string>();
-        /// <summary>
-        /// 死亡id
-        /// </summary>
-        public static Dictionary<string, string> die_id = new Dictionary<string, string>();
-        /// <summary>
-        /// lua虚拟机
-        /// </summary>
-        public static Script lua = new Script();
         #endregion
         /// <summary>
         /// 使用指定的事件源初始化一个 <see cref="Main"/> 类的新实例。
@@ -55,12 +37,12 @@ namespace XBridge
         public Main(INotifyGroupMessageReceived notifyGroupMessageReceived, IGroupEventSource groupEventSource)
         {
             INIT.init();
-            foreach (var i in setting.Servers) {
-                var ws = new Websocket.Websocket(i.Url,i.name,i.password);
+            foreach (var i in Setting.setting.Servers) {
+                var ws = new Websocket.Websocket(i.Url, i.name, i.password);
                 ws.AddFunction("onMessage", WSReceive.on_ws_pack);
                 ws.Start();
                 sockets.Add(i.name, ws);
-                runcmdid.Add(i.name, string.Empty);
+                runcmdid.Add(i.name, new Dictionary<string, long>());
             }
             new Thread(() =>
             {
@@ -79,22 +61,33 @@ namespace XBridge
             }).Start();
             notifyGroupMessageReceived.GroupMessageReceived += Group_CMD.xbridge_cmd;
             groupEventSource.MemberLeft += MemberLeft.Member_Left;
-            if (setting.enable.xb_lua)
+            if (Setting.setting.enable.xb_lua)
             {
                 LUAAPI.init();
                 LUAAPI.LoadFile();
                 notifyGroupMessageReceived.GroupMessageReceived += GroupLua.on_message;
             }
-            if (setting.enable.xb_regex)
+            if (Setting.setting.enable.xb_regex)
             {
                 notifyGroupMessageReceived.GroupMessageReceived += Regexs.on_regex;
             }
-            if (setting.enable.xb_native)
+            if (Setting.setting.enable.xb_native)
             {
                 notifyGroupMessageReceived.GroupMessageReceived += GroupMain.on_main;
                 notifyGroupMessageReceived.GroupMessageReceived += GroupChat.on_chat;
+                Logger.Log("成功注册xb_native事件处理");
             }
-            
+            Server.init();
+            if (Server.setting.enable)
+            {
+                notifyGroupMessageReceived.GroupMessageReceived += Group_WSS.on_main;
+                logs.logToFile("Websocket服务器已开启");
+            }
+            Logger.LogSuccess("加载完成");
+            Logger.LogSuccess("作者：Lition");
+            Logger.LogSuccess("bug反馈请加QQ群：952680774");
         }
+
+
     }
 }

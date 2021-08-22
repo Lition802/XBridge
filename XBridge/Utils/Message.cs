@@ -40,17 +40,17 @@ namespace XBridge.Utils
                 switch (i)
                 {
                     case Mention men:
-                        msg += $"@{id2name(e.Source.Number,men.TargetNumber)}";
+                        msg += Lang.get("MESSAGE_AT",id2name(e.Source.Number,men.TargetNumber));
                         break;
                     case MentionAll menall:
-                        msg += $"@全体成员 ";
+                        msg += Lang.get("MESSAGE_AT_ALL");
                         break;
                     case PlainText plain:
-                        if(plain.Content.IndexOf("你的QQ暂不支持") == -1)
+                        if(plain.Content.IndexOf("不支持") == -1)
                             msg += plain.Content;
                         break;
                     case Image image:
-                        msg += "图片";
+                        msg += Lang.get("MESSAGE_IMAGE");
                         break;
                     case Emoticon em:
                         msg += Lang.get("MESSAGE_FACE");

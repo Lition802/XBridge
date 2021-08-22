@@ -20,7 +20,7 @@ namespace XBridge.Func
             if (e is GroupMessageReceivedEventArgs group)
             {
                 long groupid = e.Source.Number;
-                if (Main.setting.Group.main.Contains(groupid) || Main.setting.Group.chat.Contains(groupid))
+                if (Setting.setting.Group.main.Contains(groupid) || Setting.setting.Group.chat.Contains(groupid))
                 {
                     var msg = e.Message.Parse().GetPlainText().Split(' ');
                     if (msg[0] == "/xb")
@@ -30,7 +30,7 @@ namespace XBridge.Func
                             switch (msg[1])
                             {
                                 case "info":
-                                    string m = "XBridge v1.2.1.0\n";
+                                    string m = "XBridge v1.2.3.0\n";
                                     m += "作者：Lition\n";
                                     m += "唯一官方QQ群：952680774\n";
                                     m += "本机器人模块依赖bug驱动";

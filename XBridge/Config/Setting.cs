@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 namespace XBridge
 {
+    
     public class Servers
     {
         /// <summary>
@@ -67,5 +68,9 @@ namespace XBridge
         /// 功能项
         /// </summary>
         public enable enable { get; set; }
+        /// <summary>
+        /// 基本设置
+        /// </summary>
+        public static Setting setting = new Setting();
     }
 }

@@ -10,6 +10,7 @@ using HuajiTech.CoolQ.Messaging;
 using XBridge.Utils;
 using XBridge.Config;
 using Message = XBridge.Utils.Message;
+using CQ = HuajiTech.CoolQ.CurrentPluginContext;
 
 namespace XBridge.Func
 {
@@ -17,8 +18,10 @@ namespace XBridge.Func
     {
         public static void on_main(object sender, GroupMessageReceivedEventArgs e)
         {
-            if (Main.setting.Group.main.Contains(e.Source.Number))
+            if (Setting.setting.Group.main.Contains(e.Source.Number))
             {
+                CQ.Logger.LogDebug($"收信 << {e.Source.Number}");
+                long id = e.Source.Number;
                 var plain = e.Message.Parse().GetPlainText();
                 var pl = plain.Split(' ');
                 switch (pl[0])
@@ -26,7 +29,7 @@ namespace XBridge.Func
                     case "/bind":
                         if(plain.Length > 7)
                         {
-                            if (Data.wl_exsis(e.Sender.Number))
+                            if (Main.playerdatas.wl_exsis(e.Sender.Number))
                             {
                                 e.Reply(Lang.get("MEMBER_ALREADY_IN_WHITELIST",Data.get_xboxid(e.Sender.Number)));
                                 return;
@@ -37,10 +40,12 @@ namespace XBridge.Func
                                 return;
                             }
                             Data.wl_add(e.Sender.Number, plain.Substring(6));
+                            if(e.Sender.CanEditAlias)
+                                e.Sender.SetAlias(plain.Substring(6));
                             e.Reply(Lang.get("MEMBER_BIND_SUCCESS",plain.Substring(6)));
-                            if (Main.tmp.autowl)
+                            if (Main.tmp[id].autowl)
                             {
-                                SendPack.runcmdAll($"whitelist add \"{Data.get_xboxid(e.Sender.Number)}\"");
+                                SendPack.runcmdAll(e.Source.Number, $"whitelist add \"{Data.get_xboxid(e.Sender.Number)}\"");
                                 e.Reply(Lang.get("XBOXID_ADD_TO_SERVER_SUCCESS"));
                             }
                         }
@@ -48,6 +53,7 @@ namespace XBridge.Func
                     case "/unbind":
                         if (Data.wl_exsis(e.Sender.Number))
                         {
+                            SendPack.runcmdAll(e.Source.Number, $"whitelist remove \"{Data.get_xboxid(e.Sender.Number)}\"");
                             Data.wl_remove(e.Sender.Number);
                             e.Reply(Lang.get("MEMBER_UNBIND"));
                         }
@@ -70,7 +76,7 @@ namespace XBridge.Func
                                 if (Data.wl_exsis(q))
                                 {
                                     e.Reply(Lang.get("ADD_WL_TO_SERVER", q.ToString(), Data.get_xboxid(q)));
-                                    SendPack.runcmdAll($"whitelist add \"{Data.get_xboxid(q)}\"");
+                                    SendPack.runcmdAll(e.Source.Number, $"whitelist add \"{Data.get_xboxid(q)}\"");
                                 }
                                 else
                                 {
@@ -80,10 +86,8 @@ namespace XBridge.Func
                         }
                         break;
                     case "wl-":
-                        var m2 = e.Message.Parse();
-                        if (m2.Contains(CurrentPluginContext.CurrentUser.Mention()))
+                        if (Message.GetAt(e).Length != 0)
                         {
-                            //long q = Message.GetAt(e)[0];
                             if (!Data.is_admin(e.Sender.Number))
                             {
                                 e.Reply(Lang.get("MEMBER_NOT_ADMIN"));
@@ -94,12 +98,12 @@ namespace XBridge.Func
                                 if (Data.wl_exsis(q))
                                 {
                                     e.Reply(Lang.get("REMOVE_WL_TO_SERVER", q.ToString(), Data.get_xboxid(q)));
-                                    SendPack.runcmdAll($"whitelist remove \"{Data.get_xboxid(q)}\"");
+                                    SendPack.runcmdAll(e.Source.Number, $"whitelist remove \"{Data.get_xboxid(q)}\"");
                                     Data.wl_remove(q);
                                 }
                                 else
                                 {
-                                    e.Reply(Lang.get("MEMBER_NOT_BIND_WHEN_EWMOVE", q.ToString()));
+                                    e.Reply(Lang.get("MEMBER_NOT_BIND_WHEN_REMOVE", q.ToString()));
                                 }
                             }
                         }
@@ -110,7 +114,7 @@ namespace XBridge.Func
                             e.Reply(Lang.get("MEMBER_NOT_ADMIN"));
                             return;
                         }
-                        if (Main.setting.Servers.Count == 1)
+                        if (Setting.setting.Servers.Count == 1)
                         {                            
                             if(pl.Length < 2)
                             {
@@ -118,7 +122,7 @@ namespace XBridge.Func
                                 return;
                             }
                             e.Reply(Lang.get("COMMAND_SENDTO_ALL_SERVER",plain.Substring(5)));
-                            SendPack.runcmdAll(plain.Substring(5));
+                            SendPack.runcmdAll(e.Source.Number,plain.Substring(5));
                         }
                         else
                         {
@@ -130,20 +134,34 @@ namespace XBridge.Func
                             if (Data.is_server(pl[1]))
                             {
                                 e.Reply(Lang.get("COMMAND_SENDTO_SERVER", plain.Substring($"/cmd {pl[1]} ".Length),pl[1]));
-                                SendPack.runcmd(pl[1], plain.Substring($"/cmd {pl[1]} ".Length));
+                                SendPack.runcmd(e.Source.Number,pl[1], plain.Substring($"/cmd {pl[1]} ".Length));
                             }
                         }
                         break;
                     case "查服":
-                        SendPack.runcmdAll("list");
+                        SendPack.runcmdAll(e.Source.Number, "list");
                         break;
                     case "白名单列表":
-                        string b = "[白名单列表]";
-                        foreach(var i in Main.playerdatas)
+                        var b = new StringBuilder("[白名单列表]");
+                        foreach(var i in Main.playerdatas.getAll())
                         {
-                            b += $"\n{i.Key}:{i.Value.xboxid}";
+                            b.Append($"\n{i.Key}:{i.Value.xboxid}");
                         }
-                        e.Source.Send(b);
+                        e.Source.Send(b.ToString());
+                        break;
+                    case "我的统计":
+                        if (Data.wl_exsis(e.Sender.Number))
+                        {
+                            var bb = new StringBuilder($"[{Data.get_xboxid(e.Sender.Number)}]\n");
+                            bb.AppendLine($"加入次数:{Main.playerdatas.get(e.Sender.Number).count.join}");
+                            bb.AppendLine($"死亡次数:{Main.playerdatas.get(e.Sender.Number).count.death}");
+                            bb.Append($"总时长:{Main.playerdatas.get(e.Sender.Number).count.duration}(分钟)");
+                            e.Source.Send(bb.ToString());
+                        }
+                        else
+                        {
+                            e.Reply(Lang.get("MEMBER_NOT_BIND"));
+                        }
                         break;
                 }
             }

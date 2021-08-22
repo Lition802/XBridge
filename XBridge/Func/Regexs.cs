@@ -9,11 +9,16 @@ using HuajiTech.CoolQ.Events;
 using System.Text.RegularExpressions;
 using XBridge.Config;
 using Message = XBridge.Utils.Message;
+using System.Threading.Tasks;
 
 namespace XBridge.Func
 {
     class Regexs
     {
+        /// <summary>
+        /// 正则表达式组
+        /// </summary>
+        public static List<RegexItem> regexs = new List<RegexItem>();
         private static string buildString(GroupMessageReceivedEventArgs e, string input)
         {
             long qq = e.Sender.Number;
@@ -44,11 +49,11 @@ namespace XBridge.Func
         public static void on_regex(object sender,GroupMessageReceivedEventArgs e)
         {
             long groupid = e.Source.Number;
-            if (Main.setting.Group.main.Contains(groupid) || Main.setting.Group.chat.Contains(groupid))
+            if (Setting.setting.Group.main.Contains(groupid) || Setting.setting.Group.chat.Contains(groupid))
             {
                 string input = e.Message.Parse().GetPlainText();
                 long qq = e.Sender.Number;
-                foreach (var i in Main.regexs)
+                foreach (var i in regexs)
                 {
                     Match mat = Regex.Match(input, i.Regex);
                     if (mat.Success)
@@ -82,13 +87,13 @@ namespace XBridge.Func
             switch (it.type)
             {
                 case "runcmdall":
-                    SendPack.runcmdAll(o);
+                    SendPack.runcmdAll(group,o);
                     return true;
                 case "runcmd":
                     var c = o.Split('|');
                     if (Data.is_server(c[0]))
                     {
-                        SendPack.runcmd(c[0], c[1]);
+                        SendPack.runcmd(group,c[0], c[1]);
                         return true;
                     }
                     return false;
@@ -116,11 +121,15 @@ namespace XBridge.Func
                     CurrentPluginContext.Group(group).Send(XB_CMD.runcode(o));
                     return true;
                 case "http_get":
-                    try
+                    Task.Run(() =>
                     {
-                        new System.Net.WebClient().DownloadData(o);
-                        return true;
-                    }catch {return false;}
+                        try
+                        {
+                            new System.Net.WebClient().DownloadData(o);
+                        }
+                        catch {  }
+                    });
+                    return true;
                 default:
                     return false;
             }

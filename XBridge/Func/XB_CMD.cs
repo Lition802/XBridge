@@ -3,9 +3,6 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using File = System.IO.File;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using XBridge.Config;
 using XBridge.Utils;
 
@@ -24,7 +21,7 @@ namespace XBridge.Func
                         switch (c[1])
                         {
                             case "add":
-                                if (Data.xboxid_exsis(c[2]))
+                                if (Data.wl_exsis(long.Parse(c[2])))
                                     return $"qq {c[2]} already in whitelist.";
                                 Data.wl_add(long.Parse(c[2]), cmd.Substring($"wl add {c[2]} ".Length));
                                 return "key add to whitelist";
@@ -45,7 +42,7 @@ namespace XBridge.Func
                                 return $"{c[2]} not in whitelist.";
                             case "list":
                                 string b = "[whitelist]";
-                                foreach (var i in Main.playerdatas)
+                                foreach (var i in Main.playerdatas.getAll())
                                 {
                                     b += $"\n{i.Key}:{i.Value.xboxid}";
                                 }
@@ -72,13 +69,13 @@ namespace XBridge.Func
                             case "run":
                                 try
                                 {
-                                    return Main.lua.DoString(cmd.Substring(8)).ToDebugPrintString();
+                                    return LUAAPI.lua.DoString(cmd.Substring(8)).ToDebugPrintString();
                                 }
                                 catch (Exception e) { return e.Message; }
                             case "call":
                                 try
                                 {
-                                    return Main.lua.Globals.Get(c[2]).Function.Call().ToDebugPrintString();
+                                    return LUAAPI.lua.Globals.Get(c[2]).Function.Call().ToDebugPrintString();
                                 }
                                 catch (Exception ex) { return ex.Message; }
                             default:
@@ -113,7 +110,7 @@ namespace XBridge.Func
                                 if (Data.is_admin(long.Parse(c[2])))
                                     return $"member {c[2]} already in admins.";
                                 else
-                                    Main.setting.Admins.Add(long.Parse(c[2]));
+                                    Setting.setting.Admins.Add(long.Parse(c[2]));
                                 return $"member {c[2]} add to admins.";
                             case "remove":
                                 try { long q = long.Parse(c[2]); }
@@ -121,39 +118,47 @@ namespace XBridge.Func
                                 if (!Data.is_admin(long.Parse(c[2])))
                                     return $"member not in admins.";
                                 else
-                                    Main.setting.Admins.Remove(long.Parse(c[2]));
+                                    Setting.setting.Admins.Remove(long.Parse(c[2]));
                                 return $"member {c[2]} remove from admins.";
                             default:
                                 return $"command admin donot have overload >>{c[1]}<<";
                         }
                     case "setconfig":
-                        switch (c[1])
+                        try { long q = long.Parse(c[2]); }
+                        catch { return $"unable to convert {c[2]} to number"; }
+                        //c[0] setconfig
+                        //c[1] 1145141919
+                        //c[2] chatsub
+                        //c[4] 20
+                        switch (c[3])
                         {
                             case "chat":
-                                Main.tmp.chatindex = c[2].Replace("{空格}", " ");
-                                return "chat 索引已更改为 " + Main.tmp.chatindex;
+                                Main.tmp[long.Parse(c[1])].chatindex = c[4].Replace("{空格}"," ");
+                                TMP.SAVE();
+                                return $"{c[1]} chat 索引已更改为 " + c[4].Replace("{空格}", " ");
                             case "autowl":
-                                Main.tmp.autowl = bool.Parse(c[2]);
-                                return "自助白名单 模式已更新为 " + Main.tmp.autowl.ToString();
-
+                                Main.tmp[long.Parse(c[1])].autowl = bool.Parse(c[4]);
+                                TMP.SAVE();
+                                return $"{c[1]} 自助白名单 模式已更新为 " + c[4];
                             case "chatenable":
-                                Main.tmp.chatenable = bool.Parse(c[2]);
-                                return "聊天转发 已更新为 " + Main.tmp.chatenable.ToString();
-
+                                Main.tmp[long.Parse(c[1])].chatenable = bool.Parse(c[4]);
+                                TMP.SAVE();
+                                return $"{c[1]} 聊天转发 已更新为 " + c[4];
                             case "joinenable":
-                                Main.tmp.joinenable = bool.Parse(c[2]);
-                                return "入服通知 已更新为 " + Main.tmp.joinenable.ToString();
-
+                                Main.tmp[long.Parse(c[1])].joinenable = bool.Parse(c[4]);
+                                return $"{c[1]} 入服通知 已更新为 " + c[4];
                             case "leftenable":
-                                Main.tmp.leftenable = bool.Parse(c[2]);
-                                return "出服通知 已更新为 " + Main.tmp.leftenable.ToString();
-
+                                Main.tmp[long.Parse(c[1])].leftenable = bool.Parse(c[4]);
+                                TMP.SAVE();
+                                return $"{c[1]} 出服通知 已更新为 " + c[4];
                             case "mobdieenable":
-                                Main.tmp.mobdieenable = bool.Parse(c[2]);
-                                return "死亡通知 已更新为 " + Main.tmp.mobdieenable.ToString();
+                                Main.tmp[long.Parse(c[1])].mobdieenable = bool.Parse(c[4]);
+                                TMP.SAVE();
+                                return $"{c[1]} 死亡通知 已更新为 " + c[4];
                             case "chatsub":
-                                Main.tmp.chatsub = int.Parse(c[2]);
-                                return "聊天长度截取值 已更新为 " + Main.tmp.chatsub.ToString();
+                                Main.tmp[long.Parse(c[1])].chatsub = int.Parse(c[4]);
+                                TMP.SAVE();
+                                return $"{c[1]} 聊天长度截取值 已更新为 " + c[4];
                             default:
                                 return $"command setconfig donot have overload >>{c[1]}<<";
                         }
@@ -175,8 +180,8 @@ namespace XBridge.Func
                         {
                             LUAAPI.Clear();
                             LUAAPI.LoadFile();
-                            Main.regexs = JsonConvert.DeserializeObject<List<RegexItem>>(File.ReadAllText(path + "Regex.json"));
-                            Main.setting = JsonConvert.DeserializeObject<Setting>(File.ReadAllText(path + "setting.json"));
+                            Regexs.regexs = JsonConvert.DeserializeObject<List<RegexItem>>(File.ReadAllText(path + "Regex.json"));
+                            Setting.setting = JsonConvert.DeserializeObject<Setting>(File.ReadAllText(path + "setting.json"));
                             return "配置文件重载完成";
                         }
                         catch (Exception x) { return $"配置文件重载失败:{x}"; }
@@ -185,7 +190,7 @@ namespace XBridge.Func
                 }
                 #endregion
             }catch(Exception e)
-            { return e.ToString(); }
+            { Error.LogToFile("XBCMD",e.ToString()); return e.ToString(); }
         }
     }
 }

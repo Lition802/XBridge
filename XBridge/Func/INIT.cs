@@ -6,6 +6,7 @@ using File = System.IO.File;
 using XBridge.Config;
 using System;
 using System.Text;
+using System.IO;
 
 namespace XBridge.Func
 {
@@ -40,12 +41,7 @@ namespace XBridge.Func
                 var cfg = JObject.Parse(JsonConvert.SerializeObject(tmp)).ToString();
                 File.WriteAllText(path + "setting.json", cfg);
             }
-            Main.setting = JsonConvert.DeserializeObject<Setting>(File.ReadAllText(path + "setting.json"));
-            if (!File.Exists(path + "playerdata.json"))
-            {
-                File.WriteAllText(path + "playerdata.json", "{}");
-            }
-            Main.playerdatas = JsonConvert.DeserializeObject<Dictionary<long,PlayerData>>(File.ReadAllText(path+"playerdata.json"));
+            Setting.setting = JsonConvert.DeserializeObject<Setting>(File.ReadAllText(path + "setting.json"));
             if(File.Exists(path+".lang") == false)
             {
                 var s = new StringBuilder("#这里是XBridge的语言文件\n#以#开头的行会被认作注释\n");
@@ -66,11 +62,13 @@ namespace XBridge.Func
                 }
                 catch { }
             }
-            if (Main.setting.enable.xb_regex)
+            if (Setting.setting.enable.xb_regex)
             {
+                if (File.Exists(path + "Regex.json") == false)
+                    File.WriteAllBytes(path + "Regex.json", Properties.Resources.Regex);
                 try
                 {
-                    Main.regexs = JsonConvert.DeserializeObject<List<RegexItem>>(File.ReadAllText(path + "Regex.json"));
+                    Regexs.regexs = JsonConvert.DeserializeObject<List<RegexItem>>(File.ReadAllText(path + "Regex.json"));
                 }
                 catch (Exception exx) { CurrentPluginContext.Logger.LogError(exx.ToString()); }
             }
@@ -78,15 +76,17 @@ namespace XBridge.Func
                 File.WriteAllBytes(path + "mobs.json", Properties.Resources.mobs);
             if (!File.Exists(path + "die_id.json"))
                 File.WriteAllBytes(path + "die_id.json", Properties.Resources.die_id);
-            if (Main.setting.enable.xb_native)
+            if (Setting.setting.enable.xb_native)
             {
                 try
                 {
-                    Main.mobs = JsonConvert.DeserializeObject<Dictionary<string, string>>(File.ReadAllText(path + "mobs.json"));
-                    Main.die_id = JsonConvert.DeserializeObject<Dictionary<string, string>>(File.ReadAllText(path + "die_id.json"));
+                    DieMessage.mobs = JsonConvert.DeserializeObject<Dictionary<string, string>>(File.ReadAllText(path + "mobs.json"));
+                    DieMessage.die_id = JsonConvert.DeserializeObject<Dictionary<string, string>>(File.ReadAllText(path + "die_id.json"));
                 }
                 catch (Exception exx) { CurrentPluginContext.Logger.LogError(exx.ToString()); }
-             }
+            }
+            Directory.CreateDirectory(path + "logs/");
+            Directory.CreateDirectory(path + "/logs/error");
         }
     }
 }
